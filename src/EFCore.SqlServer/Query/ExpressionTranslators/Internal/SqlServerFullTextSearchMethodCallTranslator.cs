@@ -31,6 +31,16 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                 nameof(SqlServerDbFunctionsExtensions.FreeText),
                 new[] { typeof(DbFunctions), typeof(string), typeof(string), typeof(int) });
 
+        private static readonly MethodInfo _freeTextWildcardMethodInfo
+            = typeof(SqlServerDbFunctionsExtensions).GetRuntimeMethod(
+                nameof(SqlServerDbFunctionsExtensions.FreeText),
+                new[] { typeof(DbFunctions), typeof(object), typeof(string) });
+
+        private static readonly MethodInfo _freeTextWildcardMethodInfoWithLanguage
+            = typeof(SqlServerDbFunctionsExtensions).GetRuntimeMethod(
+                nameof(SqlServerDbFunctionsExtensions.FreeText),
+                new[] { typeof(DbFunctions), typeof(object), typeof(string), typeof(int) });
+
         private static readonly MethodInfo _containsMethodInfo
             = typeof(SqlServerDbFunctionsExtensions).GetRuntimeMethod(
                 nameof(SqlServerDbFunctionsExtensions.Contains),
@@ -41,6 +51,16 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                 nameof(SqlServerDbFunctionsExtensions.Contains),
                 new[] { typeof(DbFunctions), typeof(string), typeof(string), typeof(int) });
 
+        private static readonly MethodInfo _containsWildcardMethodInfo
+            = typeof(SqlServerDbFunctionsExtensions).GetRuntimeMethod(
+                nameof(SqlServerDbFunctionsExtensions.Contains),
+                new[] { typeof(DbFunctions), typeof(object), typeof(string) });
+
+        private static readonly MethodInfo _containsWildcardMethodInfoWithLanguage
+            = typeof(SqlServerDbFunctionsExtensions).GetRuntimeMethod(
+                nameof(SqlServerDbFunctionsExtensions.Contains),
+                new[] { typeof(DbFunctions), typeof(object), typeof(string), typeof(int) });
+
         /// <summary>
         ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -49,7 +69,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
         {
             Check.NotNull(methodCallExpression, nameof(methodCallExpression));
 
-            if (Equals(methodCallExpression.Method, _freeTextMethodInfo))
+            if (Equals(methodCallExpression.Method, _freeTextMethodInfo) ||
+                Equals(methodCallExpression.Method, _freeTextWildcardMethodInfo))
             {
                 ValidatePropertyReference(methodCallExpression.Arguments[1]);
 
@@ -63,7 +84,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                     });
             }
 
-            if (Equals(methodCallExpression.Method, _freeTextMethodInfoWithLanguage))
+            if (Equals(methodCallExpression.Method, _freeTextMethodInfoWithLanguage) ||
+                Equals(methodCallExpression.Method, _freeTextWildcardMethodInfoWithLanguage))
             {
                 ValidatePropertyReference(methodCallExpression.Arguments[1]);
 
@@ -79,7 +101,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                     });
             }
 
-            if (Equals(methodCallExpression.Method, _containsMethodInfo))
+            if (Equals(methodCallExpression.Method, _containsMethodInfo) ||
+                Equals(methodCallExpression.Method, _containsWildcardMethodInfo))
             {
                 ValidatePropertyReference(methodCallExpression.Arguments[1]);
 
@@ -93,7 +116,8 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                     });
             }
 
-            if (Equals(methodCallExpression.Method, _containsMethodInfoWithLanguage))
+            if (Equals(methodCallExpression.Method, _containsMethodInfoWithLanguage) ||
+                Equals(methodCallExpression.Method, _containsWildcardMethodInfoWithLanguage))
             {
                 ValidatePropertyReference(methodCallExpression.Arguments[1]);
 
@@ -120,7 +144,10 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.ExpressionTranslators.In
                 expression = nullableExpression.Operand;
             }
 
-            if (!(expression is ColumnExpression))
+            if (!(expression is ColumnExpression ||
+                  expression is ConstantExpression ||
+                  expression is EntityParameterExpression ||
+                  expression is PropertyListParameterExpression))
             {
                 throw new InvalidOperationException(SqlServerStrings.InvalidColumnNameForFreeText);
             }
